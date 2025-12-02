@@ -74,6 +74,13 @@ The library is organized into four metric categories, each as a separate module 
    - Provides: consumer sentiment, consumer confidence, retail sales, retail sales growth, PCE, disposable income, saving rate, consumer credit
    - Uses SERIES_IDS dictionary mapping user-friendly names to FRED series codes
 
+5. **CustomMetrics** (`custom_metrics.py`) - Custom financial metrics and technical indicators
+   - Fully implemented
+   - Uses yfinance for data fetching
+   - MeiTou QQQ 200 Days Deviation Index: `(QQQ price - SMA_200) / SMA_200`
+   - Provides both daily and weekly aggregations
+   - Includes trading signals (Strong Bullish/Bullish/Bearish/Strong Bearish) based on deviation thresholds
+
 ## Key Design Patterns
 
 ### Weekly Aggregation

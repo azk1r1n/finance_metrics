@@ -54,7 +54,7 @@ Get a free API key from: https://fred.stlouisfed.org/docs/api/api_key.html
 ## Quick Start
 
 ```python
-from finance_metrics import MarketIndices, CommodityPrices, MacroIndicators, ConsumerMetrics
+from finance_metrics import MarketIndices, CommodityPrices, MacroIndicators, ConsumerMetrics, CustomMetrics
 
 # Fetch S&P 500 data
 market = MarketIndices()
@@ -73,6 +73,10 @@ inflation = macro.get_inflation_rate(start_date="2023-01-01")
 consumer = ConsumerMetrics()
 sentiment = consumer.get_consumer_sentiment(start_date="2023-01-01")
 retail_sales = consumer.get_retail_sales(start_date="2023-01-01")
+
+# Calculate custom metrics
+custom = CustomMetrics()
+qqq_deviation = custom.get_meitou_qqq_deviation(start_date="2023-01-01")
 ```
 
 ## Module Overview
@@ -106,6 +110,13 @@ Consumer-focused economic indicators from FRED API:
 - Disposable Personal Income
 - Personal Saving Rate
 - Consumer Credit
+
+### CustomMetrics
+Custom financial metrics and technical indicators:
+- **MeiTou QQQ 200 Days Deviation Index**: Measures how far QQQ (Nasdaq-100 ETF) is trading from its 200-day simple moving average
+  - Formula: `(QQQ price - SMA_200) / SMA_200`
+  - Provides trading signals (Strong Bullish/Bullish/Bearish/Strong Bearish)
+  - Available in both daily and weekly formats for forecasting alignment
 
 ## Data Sources
 
