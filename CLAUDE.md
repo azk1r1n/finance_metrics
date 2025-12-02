@@ -110,6 +110,16 @@ monthly_data = macro.get_cpi(start_date="2023-01-01")
 weekly_data = monthly_data.resample('W').ffill()
 ```
 
+**Important Note on Commodities**: Futures contracts expire and roll over, so requesting weekly data directly often fails. Always fetch daily data first, then resample:
+```python
+# Correct approach for commodities
+oil_daily = commodities.get_commodity("crude_oil_wti", start_date="2023-01-01")
+oil_weekly = oil_daily['Close'].resample('W').last()
+
+# Incorrect - will often fail with YFPricesMissingError
+# oil_weekly = commodities.get_commodity("crude_oil_wti", interval="1wk")
+```
+
 ## Data Source Attribution
 
 - Market & Commodity data: Yahoo Finance via `yfinance` library
