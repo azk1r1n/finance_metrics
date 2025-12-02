@@ -112,11 +112,38 @@ Consumer-focused economic indicators from FRED API:
 - Consumer Credit
 
 ### CustomMetrics
-Custom financial metrics and technical indicators:
-- **MeiTou QQQ 200 Days Deviation Index**: Measures how far QQQ (Nasdaq-100 ETF) is trading from its 200-day simple moving average
-  - Formula: `(QQQ price - SMA_200) / SMA_200`
-  - Provides trading signals (Strong Bullish/Bullish/Bearish/Strong Bearish)
-  - Available in both daily and weekly formats for forecasting alignment
+Six MeiTou custom metrics designed for weekly retail forecasting:
+
+**1. QQQ 200 Days Deviation Index** ✅ Implemented
+- Measures Nasdaq-100 trend strength vs 200-day moving average
+- Formula: `(QQQ price - SMA_200) / SMA_200`
+- Normalized 0-100 scale available for modeling
+- Signals: Strong Bullish/Bullish/Bearish/Strong Bearish
+
+**2. Market Breadth Index** 🚧 Placeholder
+- Will measure market participation and health
+- Advance/Decline ratios, new highs/lows
+- Percentage of stocks above 200-day MA
+
+**3. VIX Fear & Greed Index** 🚧 Placeholder
+- Will measure market volatility and sentiment
+- VIX levels and term structure analysis
+- Contango/backwardation signals
+
+**4. Sector Rotation Index** 🚧 Placeholder
+- Will track economic sector momentum
+- 11 GICS sectors relative performance
+- Leadership and rotation patterns
+
+**5. Volume Momentum Index** 🚧 Placeholder
+- Will analyze trading volume trends
+- On-balance volume (OBV)
+- Volume-confirmed price movements
+
+**6. Multi-Timeframe Momentum** 🚧 Placeholder
+- Will combine signals across timeframes
+- 50-day, 100-day, 200-day trend alignment
+- Momentum convergence/divergence
 
 ## Data Sources
 
