@@ -28,7 +28,7 @@ uv add --dev <package-name>
 
 ```bash
 # Run the demo notebook
-jupyter notebook demo.ipynb
+jupyter notebook src/notebooks/demo.ipynb
 
 # Run main.py (if needed)
 uv run python main.py
@@ -36,6 +36,17 @@ uv run python main.py
 # Run tests (when implemented)
 uv run pytest
 ```
+
+## Environment Setup
+
+Create a `.env` file in the project root with your FRED API key:
+```bash
+FRED_API_KEY=your_fred_api_key_here
+```
+
+Get a free API key from: https://fred.stlouisfed.org/docs/api/api_key.html
+
+The `.env` file is already in `.gitignore` to prevent committing secrets.
 
 ## Architecture
 
@@ -51,15 +62,17 @@ The library is organized into four metric categories, each as a separate module 
    - Uses futures ticker symbols (e.g., "CL=F" for WTI crude oil)
    - Returns pandas DataFrames with price data
 
-3. **MacroIndicators** (`macro_indicators.py`) - Economic indicators
-   - NOT YET IMPLEMENTED (stub methods raise NotImplementedError)
-   - Intended to use FRED API (requires API key)
-   - Planned: GDP, CPI, unemployment, interest rates
+3. **MacroIndicators** (`macro_indicators.py`) - Economic indicators via FRED
+   - Fully implemented
+   - Uses FRED API (requires FRED_API_KEY in .env)
+   - Provides: GDP, GDP growth, CPI, inflation rate, PPI, unemployment, interest rates, housing starts
+   - Uses SERIES_IDS dictionary mapping user-friendly names to FRED series codes
 
-4. **ConsumerMetrics** (`consumer_metrics.py`) - Consumer economic data
-   - NOT YET IMPLEMENTED (stub methods raise NotImplementedError)
-   - Intended to use FRED API (requires API key)
-   - Planned: consumer confidence, retail sales, PCE, sentiment
+4. **ConsumerMetrics** (`consumer_metrics.py`) - Consumer economic data via FRED
+   - Fully implemented
+   - Uses FRED API (requires FRED_API_KEY in .env)
+   - Provides: consumer sentiment, consumer confidence, retail sales, retail sales growth, PCE, disposable income, saving rate, consumer credit
+   - Uses SERIES_IDS dictionary mapping user-friendly names to FRED series codes
 
 ## Key Design Patterns
 
@@ -78,24 +91,27 @@ Each module class provides a consistent interface:
 - All return pandas DataFrames
 - yfinance methods accept `interval` parameter ("1d", "1wk", "1mo")
 
-### Ticker Mappings
-Both `MarketIndices` and `CommodityPrices` use internal dictionaries mapping user-friendly names to Yahoo Finance tickers:
-- `MarketIndices.INDICES` (e.g., "sp500" → "^GSPC")
-- `CommodityPrices.COMMODITIES` (e.g., "crude_oil_wti" → "CL=F")
+### Series ID Mappings
+All modules use internal dictionaries mapping user-friendly names to data source identifiers:
+- `MarketIndices.INDICES` - Yahoo Finance ticker symbols (e.g., "sp500" → "^GSPC")
+- `CommodityPrices.COMMODITIES` - Yahoo Finance futures symbols (e.g., "crude_oil_wti" → "CL=F")
+- `MacroIndicators.SERIES_IDS` - FRED series codes (e.g., "unemployment" → "UNRATE")
+- `ConsumerMetrics.SERIES_IDS` - FRED series codes (e.g., "consumer_sentiment" → "UMCSENT")
 
-## Implementation Notes for FRED API
+### Mixed Frequency Data Alignment
+Economic data comes at different frequencies:
+- **Daily**: Market indices, commodities (yfinance)
+- **Monthly**: CPI, unemployment, retail sales, consumer sentiment (FRED)
+- **Quarterly**: GDP (FRED)
 
-When implementing MacroIndicators and ConsumerMetrics:
-1. Add `fredapi` dependency: `uv add fredapi`
-2. FRED requires API key from https://fred.stlouisfed.org/docs/api/api_key.html
-3. Use environment variable or config file (not hardcoded)
-4. FRED series IDs needed (examples):
-   - GDP: "GDP"
-   - CPI: "CPIAUCSL"
-   - Unemployment: "UNRATE"
-   - Consumer Confidence: "UMCSENT"
+For weekly forecasting, use forward-fill to align monthly/quarterly data to weekly:
+```python
+monthly_data = macro.get_cpi(start_date="2023-01-01")
+weekly_data = monthly_data.resample('W').ffill()
+```
 
 ## Data Source Attribution
 
 - Market & Commodity data: Yahoo Finance via `yfinance` library
-- Macro & Consumer data (when implemented): Federal Reserve Economic Data (FRED)
+- Macro & Consumer data: Federal Reserve Economic Data (FRED) via `fredapi` library
+- Environment variables: Loaded via `python-dotenv`

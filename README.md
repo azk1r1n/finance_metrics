@@ -35,10 +35,26 @@ source .venv/bin/activate  # On Unix/macOS
 .venv\Scripts\activate  # On Windows
 ```
 
+## Setup
+
+1. **Install dependencies:**
+```bash
+uv sync
+```
+
+2. **Set up FRED API key:**
+
+Create a `.env` file in the project root with your FRED API key:
+```bash
+FRED_API_KEY=your_api_key_here
+```
+
+Get a free API key from: https://fred.stlouisfed.org/docs/api/api_key.html
+
 ## Quick Start
 
 ```python
-from finance_metrics import MarketIndices, CommodityPrices
+from finance_metrics import MarketIndices, CommodityPrices, MacroIndicators, ConsumerMetrics
 
 # Fetch S&P 500 data
 market = MarketIndices()
@@ -48,11 +64,15 @@ sp500 = market.get_index("sp500", start_date="2023-01-01", end_date="2024-01-01"
 commodities = CommodityPrices()
 oil = commodities.get_commodity("crude_oil_wti", start_date="2023-01-01")
 
-# Get multiple indices at once
-indices = market.get_multiple_indices(
-    ["sp500", "vix", "nasdaq"],
-    start_date="2023-01-01"
-)
+# Fetch macroeconomic data
+macro = MacroIndicators()
+unemployment = macro.get_unemployment_rate(start_date="2023-01-01")
+inflation = macro.get_inflation_rate(start_date="2023-01-01")
+
+# Fetch consumer metrics
+consumer = ConsumerMetrics()
+sentiment = consumer.get_consumer_sentiment(start_date="2023-01-01")
+retail_sales = consumer.get_retail_sales(start_date="2023-01-01")
 ```
 
 ## Module Overview
@@ -69,33 +89,45 @@ Fetch commodity futures prices:
 - Precious metals: Gold, silver
 - Agricultural: Corn, wheat, soybeans
 
-### MacroIndicators (Coming Soon)
+### MacroIndicators
 Macroeconomic data from FRED API:
-- GDP growth rates
-- Inflation metrics (CPI, PPI)
+- GDP and GDP growth rates
+- Inflation metrics (CPI, PPI) with year-over-year calculations
 - Unemployment rates
-- Interest rates
+- Interest rates (Federal Funds, 10-Year Treasury)
+- Housing starts
 
-### ConsumerMetrics (Coming Soon)
-Consumer-focused economic indicators:
-- Consumer Confidence Index
-- Retail Sales
-- Personal Consumption Expenditures
-- Consumer Sentiment Index
+### ConsumerMetrics
+Consumer-focused economic indicators from FRED API:
+- Consumer Sentiment (University of Michigan)
+- Consumer Confidence (OECD)
+- Retail Sales with growth calculations
+- Personal Consumption Expenditures (PCE)
+- Disposable Personal Income
+- Personal Saving Rate
+- Consumer Credit
 
 ## Data Sources
 
 - **Market & Commodity Data**: Yahoo Finance (via yfinance)
 - **Macro & Consumer Data**: Federal Reserve Economic Data (FRED) - requires API key
 
-## Roadmap
+## Features
 
-- [ ] Implement FRED API integration for macro indicators
+✅ **Implemented:**
+- Market indices and commodity prices (daily/weekly data via yfinance)
+- Macroeconomic indicators (monthly/quarterly data via FRED)
+- Consumer metrics (monthly data via FRED)
+- Weekly data aggregation from mixed frequencies
+- Year-over-year growth calculations
+- Multi-indicator fetching
+
+**Roadmap:**
 - [ ] Add data caching mechanisms
 - [ ] Implement data quality checks and outlier detection
 - [ ] Add feature engineering utilities (lags, rolling windows, seasonality)
-- [ ] Create aggregation functions for weekly forecasting alignment
 - [ ] Add visualization utilities
+- [ ] Build correlation analysis tools
 - [ ] Add data export functions for model integration
 
 ## Contributing
