@@ -8,9 +8,10 @@ Fetch and process commodity prices that affect consumer costs:
 - Agricultural commodities
 """
 
+from typing import Optional
+
 import pandas as pd
 import yfinance as yf
-from typing import Optional
 
 
 class CommodityPrices:
@@ -37,7 +38,7 @@ class CommodityPrices:
         commodity_name: str,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        interval: str = "1d"
+        interval: str = "1d",
     ) -> pd.DataFrame:
         """
         Fetch commodity price data.
@@ -64,9 +65,9 @@ class CommodityPrices:
             end=end_date,
             interval=interval,
             progress=False,
-            auto_adjust=True
+            auto_adjust=True,
         )
-        
+
         # Flatten MultiIndex columns if they exist
         if isinstance(data.columns, pd.MultiIndex):
             data.columns = data.columns.get_level_values(0)
@@ -74,9 +75,7 @@ class CommodityPrices:
         return data
 
     def get_oil_spread(
-        self,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None
+        self, start_date: Optional[str] = None, end_date: Optional[str] = None
     ) -> pd.DataFrame:
         """
         Calculate the spread between WTI and Brent crude oil.
@@ -91,10 +90,12 @@ class CommodityPrices:
         wti = self.get_commodity("crude_oil_wti", start_date, end_date)
         brent = self.get_commodity("crude_oil_brent", start_date, end_date)
 
-        result = pd.DataFrame({
-            'wti': wti['Close'],
-            'brent': brent['Close'],
-            'spread': brent['Close'] - wti['Close']
-        })
+        result = pd.DataFrame(
+            {
+                "wti": wti["Close"],
+                "brent": brent["Close"],
+                "spread": brent["Close"] - wti["Close"],
+            }
+        )
 
         return result

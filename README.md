@@ -77,6 +77,7 @@ retail_sales = consumer.get_retail_sales(start_date="2023-01-01")
 # Calculate custom metrics
 custom = CustomMetrics()
 qqq_deviation = custom.get_meitou_qqq_deviation(start_date="2023-01-01")
+put_call_ratio = custom.get_put_call_ratio(start_date="2023-01-01")
 ```
 
 ## Module Overview
@@ -120,10 +121,12 @@ Six MeiTou custom metrics designed for weekly retail forecasting:
 - Normalized 0-100 scale available for modeling
 - Signals: Strong Bullish/Bullish/Bearish/Strong Bearish
 
-**2. Market Breadth Index** 🚧 Placeholder
-- Will measure market participation and health
-- Advance/Decline ratios, new highs/lows
-- Percentage of stocks above 200-day MA
+**2. Put/Call Ratio** ✅ Implemented
+- Measures market sentiment via options activity (CBOE Equity Put/Call)
+- Formula: `Put Volume / Call Volume`
+- Contrarian indicator: High ratio = bullish signal, low ratio = bearish signal
+- Normalized 0-100 scale available for modeling
+- Signals: Strong Bullish/Bullish/Bearish/Strong Bearish
 
 **3. VIX Fear & Greed Index** 🚧 Placeholder
 - Will measure market volatility and sentiment

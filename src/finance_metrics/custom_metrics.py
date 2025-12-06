@@ -194,9 +194,7 @@ class CustomMetrics:
         qqq["Deviation"] = (qqq["Close"] - qqq[sma_col]) / qqq[sma_col]
 
         # Generate signals (thresholds: -5%, 0%, 0%, 5%)
-        qqq["Signal"] = self._generate_signal(
-            qqq["Deviation"], (-0.05, 0, 0, 0.05)
-        )
+        qqq["Signal"] = self._generate_signal(qqq["Deviation"], (-0.05, 0, 0, 0.05))
 
         return qqq[["Close", sma_col, "Deviation", "Signal"]].copy()
 
@@ -278,41 +276,136 @@ class CustomMetrics:
             }
         )
 
-        weekly["Signal"] = self._generate_signal(weekly["Deviation"], (-0.05, 0, 0, 0.05))
+        weekly["Signal"] = self._generate_signal(
+            weekly["Deviation"], (-0.05, 0, 0, 0.05)
+        )
 
         return weekly
 
     # ============================================================================
-    # METRIC 2: MARKET BREADTH INDEX (PLACEHOLDER)
+    # METRIC 2: MEITOU PUT/CALL RATIO INDEX
     # ============================================================================
 
-    def get_market_breadth_index(
+    def get_put_call_ratio(
         self,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
+        ticker: str = "^CPCE",
     ) -> pd.DataFrame:
         """
-        Calculate Market Breadth Index.
+        Calculate Put/Call Ratio as a market sentiment indicator.
 
-        Measures market participation by comparing advancing vs declining stocks.
-        Uses S&P 500 components or broad market indicators.
+        The Put/Call Ratio measures the ratio of put option volume to call option
+        volume. It's a contrarian indicator:
+        - High ratio (>1.0): Bearish sentiment → Potentially bullish signal (oversold)
+        - Low ratio (<0.7): Bullish sentiment → Potentially bearish signal (overbought)
 
-        TODO: Implement market breadth calculation
-        - Advance/Decline ratio
-        - New highs/lows
-        - Percentage of stocks above 200-day MA
+        Uses CBOE Equity Put/Call Ratio (^CPCE) by default.
+
+        Formula:
+            Ratio = Put Volume / Call Volume
+
+        Args:
+            start_date: Start date in YYYY-MM-DD format
+            end_date: End date in YYYY-MM-DD format
+            ticker: Put/Call ratio ticker (default: ^CPCE = CBOE Equity Put/Call)
+
+        Returns:
+            DataFrame with columns: PutCallRatio, Signal
+        """
+        data = self._fetch_ticker_data(ticker, start_date, end_date)
+
+        # Rename Close to PutCallRatio for clarity
+        result = pd.DataFrame({"PutCallRatio": data["Close"]})
+
+        # Generate signals (contrarian interpretation)
+        # Thresholds: (<0.5: Strong Bearish, 0.5-0.7: Bearish, 0.9-1.2: Bullish, >1.2: Strong Bullish)
+        result["Signal"] = self._generate_signal(
+            result["PutCallRatio"], (0.5, 0.7, 0.9, 1.2)
+        )
+
+        return result
+
+    def get_put_call_ratio_normalized(
+        self,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        ticker: str = "^CPCE",
+        calibration_start: str = "2015-01-01",
+        use_percentiles: bool = True,
+        lower_percentile: float = 1.0,
+        upper_percentile: float = 99.0,
+    ) -> pd.DataFrame:
+        """
+        Calculate normalized Put/Call Ratio (0-100 scale).
+
+        Uses historical data since 2015-01 to establish normalization bounds.
+        Higher normalized values indicate higher put/call ratio (more bearish sentiment).
+
+        Args:
+            start_date: Start date for output
+            end_date: End date for output
+            ticker: Put/Call ratio ticker (default: ^CPCE)
+            calibration_start: Start date for calibration (default: 2015-01-01)
+            use_percentiles: Use percentiles vs min/max
+            lower_percentile: Lower percentile (default: 1.0)
+            upper_percentile: Upper percentile (default: 99.0)
+
+        Returns:
+            DataFrame with normalized Put/Call ratio (0-100 scale)
+        """
+        # Get calibration data
+        calibration_data = self.get_put_call_ratio(calibration_start, end_date, ticker)
+
+        # Get output data
+        result = self.get_put_call_ratio(start_date, end_date, ticker)
+
+        # Normalize
+        result["PutCallRatio_Normalized"] = self._normalize_to_scale(
+            result["PutCallRatio"],
+            calibration_data["PutCallRatio"],
+            lower_percentile,
+            upper_percentile,
+            use_percentiles,
+        )
+
+        # Update signals based on normalized values
+        # Higher normalized values = higher put/call ratio = more bearish sentiment = bullish signal (contrarian)
+        result["Signal"] = self._generate_signal(
+            result["PutCallRatio_Normalized"], (30, 40, 60, 70)
+        )
+
+        return result
+
+    def get_put_call_ratio_weekly(
+        self,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        ticker: str = "^CPCE",
+    ) -> pd.DataFrame:
+        """
+        Calculate weekly aggregated Put/Call Ratio.
+
+        Uses mean aggregation for weekly values as the ratio should be averaged
+        across the week rather than taking last value.
 
         Args:
             start_date: Start date
             end_date: End date
+            ticker: Put/Call ratio ticker (default: ^CPCE)
 
         Returns:
-            DataFrame with market breadth metrics
+            Weekly aggregated DataFrame
         """
-        raise NotImplementedError(
-            "Market Breadth Index not yet implemented. "
-            "Will measure market participation and health."
+        daily = self.get_put_call_ratio(start_date, end_date, ticker)
+
+        weekly = daily.resample("W").agg({"PutCallRatio": "mean"})
+
+        weekly["Signal"] = self._generate_signal(
+            weekly["PutCallRatio"], (0.5, 0.7, 0.9, 1.2)
         )
+
+        return weekly
 
     # ============================================================================
     # METRIC 3: VIX FEAR & GREED INDEX (PLACEHOLDER)
@@ -470,6 +563,48 @@ class CustomMetrics:
         stats["pct_bearish"] = (
             (valid_deviations < 0).sum() / len(valid_deviations) * 100
             if len(valid_deviations) > 0
+            else 0
+        )
+
+        return stats
+
+    def get_put_call_ratio_stats(
+        self,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        ticker: str = "^CPCE",
+    ) -> dict:
+        """
+        Get statistical summary of the Put/Call Ratio.
+
+        Args:
+            start_date: Start date
+            end_date: End date
+            ticker: Put/Call ratio ticker (default: ^CPCE)
+
+        Returns:
+            Dictionary with statistical metrics
+        """
+        data = self.get_put_call_ratio(start_date, end_date, ticker)
+        stats = self._calculate_stats(data["PutCallRatio"])
+
+        # Add sentiment analysis
+        valid_ratios = data["PutCallRatio"].dropna()
+        stats["pct_bullish_signal"] = (
+            (valid_ratios > 0.9).sum() / len(valid_ratios) * 100
+            if len(valid_ratios) > 0
+            else 0
+        )
+        stats["pct_bearish_signal"] = (
+            (valid_ratios < 0.7).sum() / len(valid_ratios) * 100
+            if len(valid_ratios) > 0
+            else 0
+        )
+        stats["pct_neutral"] = (
+            ((valid_ratios >= 0.7) & (valid_ratios <= 0.9)).sum()
+            / len(valid_ratios)
+            * 100
+            if len(valid_ratios) > 0
             else 0
         )
 
